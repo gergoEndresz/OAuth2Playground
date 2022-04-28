@@ -22,7 +22,6 @@ object Spotify extends App {
     implicit val executionContext: ExecutionContext = system.dispatcher
 
     def buildHeaders: scala.collection.immutable.Seq[HttpHeader]
-
     def buildBody: RequestEntity
 
     def buildRequest(): HttpRequest = {
@@ -38,11 +37,23 @@ object Spotify extends App {
       Http().singleRequest(request)
     }
 
-    def processResponse(response: Future[HttpResponse]): Future[TokenWrapper]
-
-    def acquireToken(): Future[TokenWrapper] = {
+    def acquireToken(): Future[Any] = {
       processResponse(sendRequest(buildRequest()))
     }
+    def handleOK(httpResponse: HttpResponse): Future[TokenWrapper]
+    def handleNonOk(httpResponse: HttpResponse): Any = println("Something went wrong, investigate!")
+
+    def handleStatuses(httpResponse: HttpResponse): Any = httpResponse.status match {
+      case StatusCodes.OK => handleOK(httpResponse)
+      case _ => handleNonOk(httpResponse)
+    }
+
+    def processResponse(response: Future[HttpResponse]): Future[Any] = {
+      // todo
+      // todo what if it is a Failure
+      response.map(handleStatuses)
+    }
+
   }
 
   class SpotifyTokenAcquisitor(clientId: String,
@@ -61,21 +72,9 @@ object Spotify extends App {
 
     override val buildBody: RequestEntity = HttpEntity(ContentTypes.`application/x-www-form-urlencoded`, grantTypeString)
 
-    def handleOK(httpResponse: Future[HttpResponse]) = {
-      httpResponse
-        .flatMap(_.entity.toStrict(2 seconds))
-        .map(r => {
-          // This is unsafe -> hint; nObject.get
-          // Errors should be handled
 
-          val responseAsString = (r.getData().utf8String)
-          println(responseAsString)
-          val nObject = new JSONObject(responseAsString)
-          OAuth2BearerToken(nObject.get("access_token").toString)
-        })
-    }
 
-    def handleOK(httpResponse: HttpResponse): Future[OAuth2BearerToken] = {
+    override def handleOK(httpResponse: HttpResponse): Future[OAuth2BearerToken] = {
       httpResponse.entity.toStrict(2 seconds)
         .map(r => {
           val responseAsString = (r.getData().utf8String)
@@ -84,17 +83,6 @@ object Spotify extends App {
           OAuth2BearerToken(nObject.get("access_token").toString)
         }
         )
-    }
-
-    def handleNonOk(httpResponse: HttpResponse) = ???
-
-    def handleStatuses(httpResponse: HttpResponse): Any = httpResponse.status match {
-      case StatusCodes.OK => handleOK(httpResponse)
-      /* case StatusCodes.Unauthorized =>
-      case StatusCodes.BadRequest =>
-      case StatusCodes.NotFound =>
-      // case StatusCodes.CustomStatusCode(intValue) => */
-      case _ => handleNonOk(httpResponse)
     }
 
 
@@ -130,9 +118,13 @@ object Spotify extends App {
 
   val tokenAcquirer = new SpotifyTokenAcquisitor(clientId, clientSecret, tokenEndpoint)
 
-  private val eventualTokenWrapper: Future[OAuth2BearerToken] = tokenAcquirer.acquireToken()
+  private val eventualTokenWrapper: Future[Any] = tokenAcquirer.acquireToken()
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  eventualTokenWrapper map {
+    case t: OAuth2BearerToken => println(t.token)
+    case _ => println(" Unknown")
+  }
 
 }
