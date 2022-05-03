@@ -7,8 +7,8 @@ object RunMe extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   // Spotify endpoint test
-  val clientId = "d76a6461e4fa42eda58420eafb25f76c1"
-  val clientSecret = "32a3c3a6f5ed475586aefaecd0ae39f0"
+  val clientId = "aClientId"
+  val clientSecret = "aClientSecret"
 
   val tokenAcquirer = tokenProviders.SpotifyTokenProvider(clientId, clientSecret)
   //
