@@ -4,3 +4,4 @@
 /target/
 /.bsp/
 /.idea/
+/src/main/resources/secrets.conf

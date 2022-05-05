@@ -1,3 +1,4 @@
+import com.typesafe.config.{Config, ConfigFactory}
 import oauth.tokenProviders
 
 import scala.concurrent.Future
@@ -17,12 +18,12 @@ object RunMe extends App {
   //  eventualTokenWrapper.foreach(v =>
   //    println(v.toString)
   //  )
-
+  private val config: Config = ConfigFactory.load("secrets.conf").getConfig("OneTrust")
   val oneTrustMockEndpoint = "" +
-    "https://trial.onetrust.com/api/access/v1/oauth/token"
+    "https://uat-de.onetrust.com/api/access/v1/oauth/token"
   val oneTrustMockAcquirer = tokenProviders.OneTrustTokenProvider(
-    "some_client_id",
-    "some_credentials",
+    config.getString("client_id"),
+    config.getString("client_secret"),
     oneTrustMockEndpoint
   )
 

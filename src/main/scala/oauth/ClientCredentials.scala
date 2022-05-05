@@ -13,8 +13,6 @@ import scala.collection.immutable
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
-
-
   object tokenProviders {
     def OneTrustTokenProvider(clientId: String,
                                clientSecret: String,
@@ -121,6 +119,7 @@ final case class OneTrustTokenProvider(override val clientId: String,
         val responseAsString = (r.getData().utf8String)
         println(responseAsString)
         val nObject = new JSONObject(responseAsString)
+        println(nObject.get("access_token"))
         OAuth2BearerToken(nObject.get("access_token").toString)
       })
   }
